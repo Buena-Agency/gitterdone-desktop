@@ -1,7 +1,7 @@
 {
-  "name": "gitterdun-desktop",
+  "name": "gitterdone-desktop",
   "version": "1.0.0",
-  "description": "Desktop shell for Gitterdun — a thin Electron wrapper around https://gitterdun.vercel.app that always loads the latest deployed web app.",
+  "description": "Desktop shell for Gitterdone — a thin Electron wrapper around https://www.gitterdone.org that always loads the latest deployed web app.",
   "private": true,
   "main": "main.js",
   "scripts": {
@@ -16,8 +16,8 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "pro.gitterdun.desktop",
-    "productName": "Gitterdun",
+    "appId": "pro.gitterdone.desktop",
+    "productName": "Gitterdone",
     "directories": {
       "output": "dist"
     },

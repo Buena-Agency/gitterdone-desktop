@@ -2,7 +2,7 @@ const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 
 // The live web app. Changing this one line re-points the whole desktop shell.
-const APP_URL = process.env.GITTERDUN_URL || 'https://www.gitterdone.org';
+const APP_URL = process.env.GITTERDONE_URL || 'https://www.gitterdone.org';
 
 let mainWindow = null;
 
@@ -13,7 +13,7 @@ function createWindow() {
     minWidth: 480,
     minHeight: 640,
     backgroundColor: '#ffffff',
-    title: 'Gitterdun',
+    title: 'Gitterdone',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

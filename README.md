@@ -1,6 +1,6 @@
-# Gitterdun Desktop
+# Gitterdone Desktop
 
-A minimal [Electron](https://www.electronjs.org/) shell around the live Gitterdun
+A minimal [Electron](https://www.electronjs.org/) shell around the live Gitterdone
 web app. It is a single window that loads **https://www.gitterdone.org**, so it
 always shows the latest deployed version — there is nothing to rebuild when the
 web app updates.
@@ -29,7 +29,7 @@ The URL lives in one place — `APP_URL` in [`main.js`](main.js). You can also
 override it at launch without editing code:
 
 ```bash
-GITTERDUN_URL="https://staging.example.com" npm start
+GITTERDONE_URL="https://staging.example.com" npm start
 ```
 
 ## How it works
