@@ -2,7 +2,7 @@ const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 
 // The live web app. Changing this one line re-points the whole desktop shell.
-const APP_URL = process.env.GITTERDUN_URL || 'https://gitterdun.vercel.app';
+const APP_URL = process.env.GITTERDUN_URL || 'https://www.gitterdone.org';
 
 let mainWindow = null;
 

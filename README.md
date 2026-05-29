@@ -1,7 +1,7 @@
 # Gitterdun Desktop
 
 A minimal [Electron](https://www.electronjs.org/) shell around the live Gitterdun
-web app. It is a single window that loads **https://gitterdun.vercel.app**, so it
+web app. It is a single window that loads **https://www.gitterdone.org**, so it
 always shows the latest deployed version — there is nothing to rebuild when the
 web app updates.
 
