@@ -22,6 +22,10 @@ function createWindow() {
     // Match the web app's dark theme so there's no white bar/flash up top.
     backgroundColor: '#1B1B1A',
     title: 'Gitterdone',
+    // Don't show a blank window while the page loads — reveal it (focused, to the
+    // front) only once the first frame is painted. Avoids the "window opened hidden
+    // in the background" issue and the flash of a loading screen.
+    show: false,
     // macOS: hide the title bar and let the (dark) content run to the top edge.
     // Traffic-light buttons stay (they float over the content). Windows keeps its
     // normal frame.
@@ -34,6 +38,17 @@ function createWindow() {
   });
 
   mainWindow.loadURL(APP_URL);
+
+  // Reveal the window once content is painted, bringing it to the front. A timeout
+  // safety-net ensures it never stays hidden if the page is slow or offline.
+  const reveal = () => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  };
+  mainWindow.once('ready-to-show', reveal);
+  setTimeout(reveal, 4000);
 
   // Open target=_blank / external links in the user's real browser, not a new app window.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
