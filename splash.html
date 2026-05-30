@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+      cursor: default;
+    }
+
+    /* Rounded dark card filling the (transparent, frameless) splash window. */
+    .card {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: #1B1B1A;
+      border-radius: 18px;
+      font-family: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* The logo hovers up/down 50px, slowly, with a cubic ease-in-out. */
+    .logo-wrap {
+      animation: floaty 3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    }
+
+    /* The checkmark cycles through the 3 brand colors, switching every 300ms. */
+    .logo {
+      display: block;
+      width: 92px;
+      height: 92px;
+      color: #FFDA34;
+      animation: colorCycle 0.9s step-end infinite;
+    }
+    .logo path { stroke: currentColor; }
+
+    .word {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #F5F5F4;
+    }
+
+    @keyframes floaty {
+      0%   { transform: translateY(-25px); }
+      50%  { transform: translateY(25px); }
+      100% { transform: translateY(-25px); }
+    }
+
+    @keyframes colorCycle {
+      0%      { color: #FFDA34; } /* yellow */
+      33.333% { color: #D57EC3; } /* pink   */
+      66.666% { color: #C65148; } /* red    */
+      100%    { color: #FFDA34; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-wrap">
+      <svg class="logo" viewBox="0 0 100 100" fill="none">
+        <path d="M16 54 L42 80 L84 24"
+              stroke-width="13"
+              stroke-linecap="round"
+              stroke-linejoin="round" />
+      </svg>
+    </div>
+    <div class="word">Gitterdone</div>
+  </div>
+</body>
+</html>
