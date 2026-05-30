@@ -1,0 +1,60 @@
+name: Build desktop installers
+
+# Build the Windows (.exe) and macOS (.dmg) installers on real runners.
+# - Push a version tag (e.g. v1.0.0) to build AND publish a GitHub Release with
+#   the installers attached.
+# - Or run manually from the Actions tab (workflow_dispatch) to just get
+#   downloadable build artifacts without cutting a release.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to create/attach a Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: --win
+          - os: macos-latest
+            args: --mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build installer
+        run: npx electron-builder ${{ matrix.args }} --publish never
+        env:
+          # No code-signing in CI (unsigned build). Notarization can be added later.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+          if-no-files-found: error
+
+      - name: Attach installers to the Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+            dist/*.dmg
