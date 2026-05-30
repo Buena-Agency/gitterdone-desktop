@@ -21,26 +21,49 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 24px;
+      gap: 22px;
       background: #1B1B1A;
       border-radius: 18px;
       font-family: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* The logo hovers up/down 50px, slowly, with a cubic ease-in-out. */
-    .logo-wrap {
-      animation: floaty 3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    /* Entrance: each element slides up + fades in, cubic ease-out, staggered. */
+    .enter {
+      opacity: 0;
+      animation: slideFade 0.55s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+    }
+    .logo-wrap { animation-delay: 0.06s; }
+    .word      { animation-delay: 0.20s; }
+
+    @keyframes slideFade {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* The checkmark cycles through the 3 brand colors, switching every 300ms. */
+    /* The real logo: three versions stacked, each shown for 300ms in turn, so the
+       three brand colors rotate across the layers (a 0.9s loop). */
     .logo {
-      display: block;
-      width: 92px;
-      height: 92px;
-      color: #FFDA34;
-      animation: colorCycle 0.9s step-end infinite;
+      position: relative;
+      width: 150px;
+      height: 150px;
     }
-    .logo path { stroke: currentColor; }
+    .logo svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      animation: cycle 0.9s step-end infinite;
+    }
+    .logo .v1 { animation-delay: 0s; }
+    .logo .v2 { animation-delay: 0.3s; }
+    .logo .v3 { animation-delay: 0.6s; }
+
+    @keyframes cycle {
+      0%      { opacity: 1; }
+      33.34%  { opacity: 0; }
+      100%    { opacity: 0; }
+    }
 
     .word {
       font-size: 34px;
@@ -48,32 +71,30 @@
       letter-spacing: -0.5px;
       color: #F5F5F4;
     }
-
-    @keyframes floaty {
-      0%   { transform: translateY(-25px); }
-      50%  { transform: translateY(25px); }
-      100% { transform: translateY(-25px); }
-    }
-
-    @keyframes colorCycle {
-      0%      { color: #FFDA34; } /* yellow */
-      33.333% { color: #D57EC3; } /* pink   */
-      66.666% { color: #C65148; } /* red    */
-      100%    { color: #FFDA34; }
-    }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo-wrap">
-      <svg class="logo" viewBox="0 0 100 100" fill="none">
-        <path d="M16 54 L42 80 L84 24"
-              stroke-width="13"
-              stroke-linecap="round"
-              stroke-linejoin="round" />
-      </svg>
+    <div class="logo-wrap enter">
+      <div class="logo">
+        <svg class="v1" width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M185.424 226.699L259.888 301.162L363.207 134.068L399.378 142.536L445.39 188.546L250.317 383.614L250.315 383.613L214.147 375.139L229.733 349.931L149.256 218.231L185.424 226.699Z" fill="#C65148"/>
+          <path d="M149.257 218.233L222.025 291L325.589 123.516L363.211 134.065L409.223 180.077L214.15 375.149L176.527 364.582L192.183 339.263L111.639 207.684L149.257 218.233Z" fill="#D47EC2"/>
+          <path d="M176.514 272.548L325.575 123.487L371.587 169.499L176.514 364.571L65.6104 253.667L111.622 207.656L176.514 272.548Z" fill="#FFDA35"/>
+        </svg>
+        <svg class="v2" width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M185.424 226.699L259.888 301.162L363.207 134.068L399.378 142.536L445.39 188.546L250.317 383.614L250.315 383.613L214.147 375.139L229.733 349.931L149.256 218.231L185.424 226.699Z" fill="#FFDA35"/>
+          <path d="M149.257 218.233L222.025 291L325.589 123.516L363.211 134.065L409.223 180.077L214.15 375.149L176.527 364.582L192.183 339.263L111.638 207.684L149.257 218.233Z" fill="#C65148"/>
+          <path d="M176.514 272.548L325.575 123.487L371.587 169.499L176.514 364.571L65.6104 253.667L111.622 207.656L176.514 272.548Z" fill="#D47EC2"/>
+        </svg>
+        <svg class="v3" width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M185.424 226.699L259.888 301.162L363.207 134.068L399.378 142.536L445.39 188.546L250.317 383.614L250.315 383.613L214.147 375.139L229.733 349.931L149.256 218.231L185.424 226.699Z" fill="#D47EC2"/>
+          <path d="M149.257 218.233L222.025 291L325.589 123.516L363.211 134.065L409.223 180.077L214.15 375.149L176.527 364.582L192.183 339.263L111.638 207.684L149.257 218.233Z" fill="#FFDA35"/>
+          <path d="M176.514 272.548L325.575 123.487L371.587 169.499L176.514 364.571L65.6104 253.667L111.622 207.656L176.514 272.548Z" fill="#C65148"/>
+        </svg>
+      </div>
     </div>
-    <div class="word">Gitterdone</div>
+    <div class="word enter">Gitterdone</div>
   </div>
 </body>
 </html>
