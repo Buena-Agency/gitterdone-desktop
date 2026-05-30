@@ -1,6 +1,6 @@
 {
   "name": "gitterdone-desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Desktop shell for Gitterdone — a thin Electron wrapper around https://app.gitterdone.org that always loads the latest deployed web app.",
   "private": true,
   "main": "main.js",

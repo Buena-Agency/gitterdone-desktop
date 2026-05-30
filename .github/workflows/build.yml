@@ -50,6 +50,24 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
+      # electron-builder notarizes + staples the .app, but not the .dmg container.
+      # A downloaded (quarantined) dmg is rejected by Gatekeeper unless the dmg
+      # itself is stapled, so notarize + staple it explicitly.
+      - name: Notarize & staple the DMG (macOS)
+        if: runner.os == 'macOS'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -e
+          DMG=$(ls dist/*.dmg | head -1)
+          echo "Notarizing $DMG"
+          xcrun notarytool submit "$DMG" --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate "$DMG"
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
