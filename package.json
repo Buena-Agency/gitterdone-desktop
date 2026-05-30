@@ -37,7 +37,7 @@
       ]
     },
     "dmg": {
-      "artifactName": "Gitterdone-${version}-mac.${ext}"
+      "artifactName": "Gitterdone-mac.${ext}"
     },
     "win": {
       "icon": "build/icon.ico",
@@ -49,7 +49,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "Gitterdone-Setup-${version}.${ext}"
+      "artifactName": "Gitterdone-Setup.${ext}"
     }
   }
 }

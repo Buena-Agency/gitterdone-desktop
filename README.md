@@ -8,6 +8,17 @@ web app updates.
 This repo is **completely separate** from the web app's repo and Vercel project.
 It contains no application code and no copy of the site — only the desktop wrapper.
 
+## Download (always latest)
+
+These permanent links always serve the newest published build — safe to put on a
+landing page once and never update:
+
+- **Windows:** https://github.com/dougburnett/gitterdone-desktop/releases/latest/download/Gitterdone-Setup.exe
+- **macOS (universal):** https://github.com/dougburnett/gitterdone-desktop/releases/latest/download/Gitterdone-mac.dmg
+
+> The builds are not yet code-signed. On first launch: **Windows** → SmartScreen
+> "More info → Run anyway"; **macOS** → right-click the app → Open.
+
 ## Run it (development)
 
 ```bash
