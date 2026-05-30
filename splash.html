@@ -40,6 +40,18 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* After the entrance, the logo hovers up/down 50px, slowly, cubic ease-in-out.
+       (On an inner wrapper so it composes with the entrance translate on .logo-wrap.) */
+    .logo-hover {
+      animation: floaty 3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    }
+
+    @keyframes floaty {
+      0%   { transform: translateY(-25px); }
+      50%  { transform: translateY(25px); }
+      100% { transform: translateY(-25px); }
+    }
+
     /* The real logo: three versions stacked, each shown for 300ms in turn, so the
        three brand colors rotate across the layers (a 0.9s loop). */
     .logo {
@@ -76,6 +88,7 @@
 <body>
   <div class="card">
     <div class="logo-wrap enter">
+      <div class="logo-hover">
       <div class="logo">
         <svg class="v1" width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M185.424 226.699L259.888 301.162L363.207 134.068L399.378 142.536L445.39 188.546L250.317 383.614L250.315 383.613L214.147 375.139L229.733 349.931L149.256 218.231L185.424 226.699Z" fill="#C65148"/>
@@ -92,6 +105,7 @@
           <path d="M149.257 218.233L222.025 291L325.589 123.516L363.211 134.065L409.223 180.077L214.15 375.149L176.527 364.582L192.183 339.263L111.638 207.684L149.257 218.233Z" fill="#FFDA35"/>
           <path d="M176.514 272.548L325.575 123.487L371.587 169.499L176.514 364.571L65.6104 253.667L111.622 207.656L176.514 272.548Z" fill="#C65148"/>
         </svg>
+      </div>
       </div>
     </div>
     <div class="word enter">Gitterdone</div>
