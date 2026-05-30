@@ -1,4 +1,5 @@
 const { app, BrowserWindow, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 // The live web app. Changing this one line re-points the whole desktop shell.
@@ -57,6 +58,15 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+
+  // Auto-update: on launch (and every 6h while open) check GitHub Releases for a
+  // newer shell. electron-updater downloads it in the background and installs it
+  // the next time the app quits — so shell changes reach everyone with no reinstall.
+  // Only runs in the packaged app; a no-op in `npm start` dev.
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+    setInterval(() => autoUpdater.checkForUpdatesAndNotify().catch(() => {}), 6 * 60 * 60 * 1000);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
