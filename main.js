@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
@@ -60,13 +60,22 @@ app.whenReady().then(() => {
   createWindow();
 
   // Auto-update: on launch (and every 6h while open) check GitHub Releases for a
-  // newer shell. electron-updater downloads it in the background and installs it
-  // the next time the app quits — so shell changes reach everyone with no reinstall.
-  // Only runs in the packaged app; a no-op in `npm start` dev.
+  // newer shell. electron-updater downloads it in the background; when it's ready we
+  // tell the page to show an in-app "update ready" toast (see preload.js) instead of
+  // a system notification. Only runs in the packaged app; a no-op in `npm start` dev.
   if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify().catch(() => {});
-    setInterval(() => autoUpdater.checkForUpdatesAndNotify().catch(() => {}), 6 * 60 * 60 * 1000);
+    autoUpdater.on('update-downloaded', () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('gd-update-ready');
+      }
+    });
+    const check = () => autoUpdater.checkForUpdates().catch(() => {});
+    check();
+    setInterval(check, 6 * 60 * 60 * 1000);
   }
+
+  // The toast's "Quit & Relaunch" button asks us to apply the downloaded update now.
+  ipcMain.on('gd-quit-and-install', () => autoUpdater.quitAndInstall(true, true));
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
