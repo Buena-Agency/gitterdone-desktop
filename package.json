@@ -31,6 +31,11 @@
     "mac": {
       "icon": "build/icon.icns",
       "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "notarize": {
+        "teamId": "87P39MB3U6"
+      },
       "target": [
         { "target": "dmg", "arch": "universal" },
         { "target": "zip", "arch": "universal" }
