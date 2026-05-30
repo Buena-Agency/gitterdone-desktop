@@ -50,7 +50,12 @@ const showUpdateToast = () => {
     'font-size:12px',
     'white-space:nowrap',
   ].join(';');
-  btn.addEventListener('click', () => ipcRenderer.send('gd-quit-and-install'));
+  btn.addEventListener('click', () => {
+    btn.textContent = 'Restarting…';
+    btn.disabled = true;
+    toast.remove();
+    ipcRenderer.send('gd-quit-and-install');
+  });
 
   const dismiss = document.createElement('button');
   dismiss.textContent = '✕';

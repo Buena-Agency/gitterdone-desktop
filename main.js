@@ -3,11 +3,13 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 // The live web app. Changing this one line re-points the whole desktop shell.
-const APP_URL = process.env.GITTERDONE_URL || 'https://app.gitterdone.org';
+// Temporarily pointed at the gitterdone-doug preview so changes show in the shell.
+const APP_URL = process.env.GITTERDONE_URL || 'https://gitterdone-doug.vercel.app';
 
 let mainWindow = null;
 let splashWindow = null;
 let isQuitting = false;
+let updateDownloaded = false;
 
 // Branded splash shown immediately on cold start so the user never stares at a
 // blank window or the web app's "loading…" text. Closed once the real window paints.
@@ -148,6 +150,7 @@ app.whenReady().then(() => {
   // a system notification. Only runs in the packaged app; a no-op in `npm start` dev.
   if (app.isPackaged) {
     autoUpdater.on('update-downloaded', () => {
+      updateDownloaded = true;
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('gd-update-ready');
       }
@@ -157,8 +160,20 @@ app.whenReady().then(() => {
     setInterval(check, 6 * 60 * 60 * 1000);
   }
 
-  // The toast's "Quit & Relaunch" button asks us to apply the downloaded update now.
-  ipcMain.on('gd-quit-and-install', () => autoUpdater.quitAndInstall(true, true));
+  // The toast's "Quit & Relaunch" button.
+  // CRITICAL: set isQuitting=true FIRST. quitAndInstall() closes all windows
+  // *before* it calls app.quit(), so the keep-warm 'close' handler would otherwise
+  // just hide the window (isQuitting still false) and the update would never apply.
+  ipcMain.on('gd-quit-and-install', () => {
+    isQuitting = true;
+    if (updateDownloaded) {
+      autoUpdater.quitAndInstall(true, true);
+    } else {
+      // Stale toast / nothing staged — just restart the app cleanly.
+      app.relaunch();
+      app.exit(0);
+    }
+  });
 
   // After the machine wakes from sleep the page is often blank (the connection
   // died while asleep) — reload so the user never has to do it by hand.
