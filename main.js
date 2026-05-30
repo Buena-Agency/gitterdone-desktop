@@ -12,8 +12,13 @@ function createWindow() {
     height: 860,
     minWidth: 480,
     minHeight: 640,
-    backgroundColor: '#ffffff',
+    // Match the web app's dark theme so there's no white bar/flash up top.
+    backgroundColor: '#1B1B1A',
     title: 'Gitterdone',
+    // macOS: hide the title bar and let the (dark) content run to the top edge.
+    // Traffic-light buttons stay (they float over the content). Windows keeps its
+    // normal frame.
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

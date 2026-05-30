@@ -39,8 +39,16 @@ jobs:
       - name: Build installer
         run: npx electron-builder ${{ matrix.args }} --publish never
         env:
-          # No code-signing in CI (unsigned build). Notarization can be added later.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          # macOS: electron-builder imports this base64 Developer ID .p12 into a
+          # temporary keychain, signs with hardened runtime, then notarizes via the
+          # Apple ID + app-specific password and staples the ticket.
+          # Windows: no cert (CSC left empty) — stays unsigned for now.
+          CSC_LINK: ${{ runner.os == 'macOS' && secrets.MACOS_CERTIFICATE_P12_BASE64 || '' }}
+          CSC_KEY_PASSWORD: ${{ runner.os == 'macOS' && secrets.MACOS_CERTIFICATE_PASSWORD || '' }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ runner.os == 'macOS' && 'true' || 'false' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
