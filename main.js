@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, powerMonitor } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
@@ -6,6 +6,12 @@ const path = require('path');
 const APP_URL = process.env.GITTERDONE_URL || 'https://app.gitterdone.org';
 
 let mainWindow = null;
+
+// Reload the live URL — used to auto-recover from any blank/broken state so the
+// user never has to manually reload or restart the app.
+function reloadApp() {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(APP_URL);
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -48,8 +54,17 @@ function createWindow() {
   mainWindow.webContents.on('did-fail-load', (_e, errorCode) => {
     // -3 is an aborted load (normal during redirects); ignore it.
     if (errorCode === -3) return;
-    setTimeout(() => mainWindow && mainWindow.loadURL(APP_URL), 2000);
+    setTimeout(reloadApp, 2000);
   });
+
+  // The renderer crashed (out-of-memory, GPU, etc.) — this is the classic
+  // "window went blank" case. Reload instead of leaving a dead window.
+  mainWindow.webContents.on('render-process-gone', (_e, details) => {
+    if (details.reason !== 'clean-exit') setTimeout(reloadApp, 500);
+  });
+
+  // Page stopped responding — reload it.
+  mainWindow.webContents.on('unresponsive', reloadApp);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -76,6 +91,10 @@ app.whenReady().then(() => {
 
   // The toast's "Quit & Relaunch" button asks us to apply the downloaded update now.
   ipcMain.on('gd-quit-and-install', () => autoUpdater.quitAndInstall(true, true));
+
+  // After the machine wakes from sleep the page is often blank (the connection
+  // died while asleep) — reload so the user never has to do it by hand.
+  powerMonitor.on('resume', reloadApp);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

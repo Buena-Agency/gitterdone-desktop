@@ -1,6 +1,6 @@
 {
   "name": "gitterdone-desktop",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Desktop shell for Gitterdone — a thin Electron wrapper around https://app.gitterdone.org that always loads the latest deployed web app.",
   "private": true,
   "main": "main.js",
@@ -51,7 +51,7 @@
       ]
     },
     "dmg": {
-      "artifactName": "Gitterdone-mac.${ext}"
+      "artifactName": "Gitterdone.${ext}"
     },
     "win": {
       "icon": "build/icon.ico",
@@ -63,7 +63,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "Gitterdone-Setup.${ext}"
+      "artifactName": "Gitterdone.${ext}"
     }
   }
 }

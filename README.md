@@ -13,8 +13,8 @@ It contains no application code and no copy of the site — only the desktop wra
 These permanent links always serve the newest published build — safe to put on a
 landing page once and never update:
 
-- **Windows:** https://github.com/dougburnett/gitterdone-desktop/releases/latest/download/Gitterdone-Setup.exe
-- **macOS (universal):** https://github.com/dougburnett/gitterdone-desktop/releases/latest/download/Gitterdone-mac.dmg
+- **Windows:** https://github.com/dougburnett/gitterdone-desktop/releases/latest/download/Gitterdone.exe
+- **macOS (universal):** https://github.com/dougburnett/gitterdone-desktop/releases/latest/download/Gitterdone.dmg
 
 > The builds are not yet code-signed. On first launch: **Windows** → SmartScreen
 > "More info → Run anyway"; **macOS** → right-click the app → Open.
