@@ -226,6 +226,10 @@ function createWindow() {
   // stay in memory) so reopening from the Dock is instant, with no reload. A real
   // quit (Cmd+Q) sets isQuitting and lets it close normally.
   mainWindow.on('close', (e) => {
+    // Force localStorage/IndexedDB to disk so a fresh login token (and things like the
+    // celebration "last shown" timestamp) survive — otherwise recent writes can be lost
+    // on a quick quit, which logged the user out + re-showed throttled popups every launch.
+    try { session.defaultSession.flushStorageData(); } catch (_e) {}
     if (process.platform === 'darwin' && !isQuitting) {
       e.preventDefault();
       mainWindow.hide();
@@ -247,6 +251,10 @@ app.whenReady().then(async () => {
   session.defaultSession.setPermissionCheckHandler(() => true);
 
   createWindow();
+
+  // Periodically flush DOM storage to disk so recent writes (auth token, prefs) survive
+  // even a hard quit / crash, not just a graceful one.
+  setInterval(() => { try { session.defaultSession.flushStorageData(); } catch (_e) {} }, 15000);
 
   // Diagnostic relay: the preload forwards readiness/log lines here so they show in the
   // app's stdout (renderer console.log doesn't).
@@ -341,6 +349,7 @@ app.whenReady().then(async () => {
 // Let the keep-warm window actually close when the user really quits.
 app.on('before-quit', () => {
   isQuitting = true;
+  try { session.defaultSession.flushStorageData(); } catch (_e) {}
   globalShortcut.unregisterAll();
   if (pillWindow && !pillWindow.isDestroyed()) pillWindow.destroy();
 });
