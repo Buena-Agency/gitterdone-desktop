@@ -12,6 +12,9 @@ try {
   // "Loading…" state) so the shell can drop the branded splash only then — the web's
   // loading text is never visible.
   contextBridge.exposeInMainWorld('gdAppReady', () => ipcRenderer.send('gd-app-ready'));
+  // Lets the web app forward diagnostic lines to the desktop's stdout (renderer
+  // console.log doesn't show there). Used to debug the session/login lifecycle.
+  contextBridge.exposeInMainWorld('gdLog', (m) => ipcRenderer.send('gd-log', String(m)));
 } catch (_e) { /* ignore */ }
 
 // Detect when the web app has rendered its first REAL screen (the logged-in app or the

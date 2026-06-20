@@ -250,7 +250,15 @@ app.whenReady().then(async () => {
 
   // Diagnostic relay: the preload forwards readiness/log lines here so they show in the
   // app's stdout (renderer console.log doesn't).
-  ipcMain.on('gd-log', (_e, msg) => console.log(String(msg)));
+  ipcMain.on('gd-log', (_e, msg) => {
+    const line = `${new Date().toISOString()} ${String(msg)}`;
+    console.log(line);
+    // Also append to a file so the session/login lifecycle is capturable without a terminal.
+    try {
+      const fs = require('fs');
+      fs.appendFileSync(path.join(app.getPath('userData'), 'gd-session.log'), line + '\n');
+    } catch (_e) { /* ignore */ }
+  });
 
   // The pill is summoned on demand — when the user starts a timer in the app, or via the
   // toggle shortcut — so it appears only when you're actually focusing on something.
