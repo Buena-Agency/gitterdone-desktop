@@ -114,36 +114,43 @@ function createWindow() {
   // The overlay is removed only once the app has loaded AND it's shown for at least
   // MIN_SPLASH_MS, so it always reads as intentional rather than a glitch that flashed by.
   const MIN_SPLASH_MS = 2000;
+  const t0 = Date.now();
+  const lg = (msg) => console.log(`[loader] +${Date.now() - t0}ms ${msg}`);
   let loaderView = new WebContentsView({ webPreferences: { contextIsolation: true } });
   loaderView.setBackgroundColor('#1B1B1A');
   loaderView.webContents.loadFile(path.join(__dirname, 'splash.html'));
   mainWindow.contentView.addChildView(loaderView);
+  lg('created loader overlay + addChildView');
+  loaderView.webContents.on('did-fail-load', (_e, code, desc) => lg(`splash did-fail-load ${code} ${desc}`));
   const fitLoader = () => {
     if (!mainWindow || mainWindow.isDestroyed() || !loaderView) return;
     const { width, height } = mainWindow.getContentBounds();
     loaderView.setBounds({ x: 0, y: 0, width, height });
+    lg(`fitLoader ${width}x${height}`);
   };
   fitLoader();
   mainWindow.on('resize', fitLoader);
 
   let shownAt = 0;
-  const showWindow = () => {
+  const showWindow = (why) => {
     if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
       mainWindow.show();
       mainWindow.focus();
+      lg(`showWindow (${why})`);
     }
     if (!shownAt) shownAt = Date.now();
   };
   // Open the window as soon as the splash itself has painted (near-instant, local file).
-  loaderView.webContents.once('did-finish-load', showWindow);
+  loaderView.webContents.once('did-finish-load', () => { lg('splash did-finish-load'); showWindow('splash-painted'); });
   // Safety net: show within 1.2s even if that event never fires.
-  setTimeout(showWindow, 1200);
+  setTimeout(() => showWindow('1.2s-safety'), 1200);
 
   let loaderRemoved = false;
-  const removeLoader = () => {
+  const removeLoader = (why) => {
     if (loaderRemoved) return;
     loaderRemoved = true;
-    ipcMain.removeListener('gd-app-ready', requestRemoveLoader);
+    lg(`removeLoader (${why})`);
+    ipcMain.removeListener('gd-app-ready', onAppReady);
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.off('resize', fitLoader);
     if (mainWindow && !mainWindow.isDestroyed() && loaderView) {
       try { mainWindow.contentView.removeChildView(loaderView); } catch (_e) { /* already gone */ }
@@ -152,15 +159,35 @@ function createWindow() {
   };
   // Dismiss the loader the moment the web app reports it has painted its first real screen
   // (so the web's own "Loading…" text is NEVER visible) — but never before the 2s floor.
-  const requestRemoveLoader = () => {
+  const requestRemoveLoader = (why) => {
     const elapsed = shownAt ? Date.now() - shownAt : 0;
-    setTimeout(removeLoader, Math.max(0, MIN_SPLASH_MS - elapsed));
+    const wait = Math.max(0, MIN_SPLASH_MS - elapsed);
+    lg(`requestRemoveLoader (${why}) -> remove in ${wait}ms`);
+    setTimeout(() => removeLoader(why), wait);
   };
-  ipcMain.once('gd-app-ready', requestRemoveLoader);
-  // Fallbacks if the page never signals (older web build, or a load error): hold a few
-  // seconds past the HTML load, then a hard safety cap so it can never get stuck.
-  mainWindow.webContents.once('did-finish-load', () => setTimeout(requestRemoveLoader, 3000));
-  setTimeout(removeLoader, 15000);
+  // The page (preload DOM-watch, or the web app's own gdAppReady call) signals when it has
+  // painted a real screen — that's the only thing that removes the loader in the happy path.
+  let gotReady = false;
+  const onAppReady = () => { gotReady = true; requestRemoveLoader('gd-app-ready'); };
+  ipcMain.on('gd-app-ready', onAppReady);
+
+  // Self-heal: if no real screen appears within 10s, the page is stuck — almost always a
+  // broken bundle served by a corrupted service-worker cache. Clear the SW + cache and
+  // reload ONCE, keeping the splash up across the reload so the user never sees the frozen
+  // "Loading…". The reloaded page then signals ready normally.
+  let healed = false;
+  setTimeout(async () => {
+    if (gotReady || healed || loaderRemoved || !mainWindow || mainWindow.isDestroyed()) return;
+    healed = true;
+    lg('app not ready in 10s — clearing service worker + cache and reloading');
+    try {
+      await session.defaultSession.clearStorageData({ storages: ['serviceworkers', 'cachestorage'] });
+      await session.defaultSession.clearCache();
+    } catch (_e) {}
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
+  }, 10000);
+  // Absolute cap so the splash can never get permanently stuck even if a reload also fails.
+  setTimeout(() => removeLoader('hard cap'), 25000);
 
   mainWindow.loadURL(APP_URL);
 
@@ -210,7 +237,7 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Notification-ready: identify the app to the OS (so notifications show as
   // "Gitterdone" with our icon) and auto-grant web permissions. The shell only ever
   // loads our own first-party site, so granting (notifications, etc.) is safe — this
@@ -220,6 +247,10 @@ app.whenReady().then(() => {
   session.defaultSession.setPermissionCheckHandler(() => true);
 
   createWindow();
+
+  // Diagnostic relay: the preload forwards readiness/log lines here so they show in the
+  // app's stdout (renderer console.log doesn't).
+  ipcMain.on('gd-log', (_e, msg) => console.log(String(msg)));
 
   // The pill is summoned on demand — when the user starts a timer in the app, or via the
   // toggle shortcut — so it appears only when you're actually focusing on something.

@@ -14,6 +14,38 @@ try {
   contextBridge.exposeInMainWorld('gdAppReady', () => ipcRenderer.send('gd-app-ready'));
 } catch (_e) { /* ignore */ }
 
+// Detect when the web app has rendered its first REAL screen (the logged-in app or the
+// login page — not the bare centered "Loading…" screen, which has no chrome) and tell the
+// shell to drop the branded splash exactly then. This lives in the preload (not the web
+// bundle) so it works even when the page's JS is served stale from the service-worker cache.
+(function watchAppReady() {
+  let done = false;
+  const ready = (why) => {
+    if (done) return;
+    done = true;
+    try { observer.disconnect(); } catch (_e) {}
+    ipcRenderer.send('gd-app-ready');
+    ipcRenderer.send('gd-log', `[gd-ready] ${why}`); // surfaced in the main process log
+  };
+  const check = () => {
+    if (done || !document.body) return;
+    // The loading screen is a single centered <p>Loading…</p> with no app chrome. Any of
+    // these means the real UI (or the login form) has mounted.
+    const hasChrome = !!document.querySelector('nav, header, main, form, button, a[href], [role="navigation"], [data-app-shell]');
+    if (hasChrome) ready('app chrome detected');
+  };
+  const observer = new MutationObserver(check);
+  const begin = () => {
+    try { observer.observe(document.documentElement, { childList: true, subtree: true }); } catch (_e) {}
+    check();
+  };
+  if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', begin);
+  else begin();
+  // NB: deliberately no blind timeout here. If chrome never appears the page is genuinely
+  // stuck (e.g. a broken cached bundle), and we want the main process to self-heal rather
+  // than receive a false "ready" that reveals the frozen "Loading…" screen.
+})();
+
 // When the main process finishes downloading an update, it sends 'gd-update-ready'.
 // Show a small toast in the bottom-left with a "Quit & Relaunch" button that applies
 // the update. The toast is built here (the page content is a remote site we don't own).
