@@ -1,4 +1,18 @@
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, contextBridge } = require('electron');
+
+// Expose a tiny bridge to the web app (context-isolated, so window.* set here isn't
+// visible to the page — it must go through contextBridge). Lets the app surface the
+// Focus pill when the user starts a timer, and detect it's inside the desktop shell.
+try {
+  contextBridge.exposeInMainWorld('gdDesktop', true);
+  contextBridge.exposeInMainWorld('gdFocusStarted', (taskId) =>
+    ipcRenderer.send('gd-focus-started', typeof taskId === 'string' ? taskId : ''),
+  );
+  // The web app calls this once it has painted its first real screen (past its own
+  // "Loading…" state) so the shell can drop the branded splash only then — the web's
+  // loading text is never visible.
+  contextBridge.exposeInMainWorld('gdAppReady', () => ipcRenderer.send('gd-app-ready'));
+} catch (_e) { /* ignore */ }
 
 // When the main process finishes downloading an update, it sends 'gd-update-ready'.
 // Show a small toast in the bottom-left with a "Quit & Relaunch" button that applies
