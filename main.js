@@ -30,7 +30,48 @@ function pillBounds() {
   };
 }
 
-function createPill() {
+// pillAnimTimer drives the slide+fade show/hide tween.
+let pillAnimTimer = null;
+// Slide-up + fade-in (direction 'in') or slide-down + fade-out (direction 'out') over 200ms,
+// expo ease-out. On 'out' the window is hidden when the tween finishes.
+function animatePill(direction) {
+  if (!pillWindow || pillWindow.isDestroyed()) return;
+  if (pillAnimTimer) { clearInterval(pillAnimTimer); pillAnimTimer = null; }
+  const SLIDE = 18, DUR = 200;
+  const expoOut = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+  const b = pillWindow.getBounds();
+  const restY = b.y;
+  if (direction === 'in') {
+    pillWindow.setOpacity(0);
+    pillWindow.setBounds({ x: b.x, y: restY + SLIDE, width: b.width, height: b.height });
+    if (!pillWindow.isVisible()) pillWindow.showInactive();
+  }
+  const t0 = Date.now();
+  pillAnimTimer = setInterval(() => {
+    if (!pillWindow || pillWindow.isDestroyed()) { clearInterval(pillAnimTimer); pillAnimTimer = null; return; }
+    const p = Math.min(1, (Date.now() - t0) / DUR);
+    const e = expoOut(p);
+    const cur = pillWindow.getBounds();
+    if (direction === 'in') {
+      pillWindow.setOpacity(e);
+      pillWindow.setBounds({ x: cur.x, y: Math.round(restY + SLIDE * (1 - e)), width: cur.width, height: cur.height });
+    } else {
+      pillWindow.setOpacity(1 - e);
+      pillWindow.setBounds({ x: cur.x, y: Math.round(restY + SLIDE * e), width: cur.width, height: cur.height });
+    }
+    if (p >= 1) {
+      clearInterval(pillAnimTimer); pillAnimTimer = null;
+      if (direction === 'out') {
+        pillWindow.hide();
+        pillWindow.setOpacity(1);
+        const f = pillWindow.getBounds();
+        pillWindow.setBounds({ x: f.x, y: restY, width: f.width, height: f.height }); // reset for next show
+      }
+    }
+  }, 16);
+}
+
+function createPill(showAfter) {
   pillWindow = new BrowserWindow({
     ...pillBounds(),
     frame: false,
@@ -55,30 +96,29 @@ function createPill() {
   pillWindow.setAlwaysOnTop(true, 'floating');
   pillWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   pillWindow.loadURL(`${APP_URL}/pill`);
-  // showInactive so surfacing the pill never steals focus from the app you're working in.
-  pillWindow.once('ready-to-show', () => pillWindow && !pillWindow.isDestroyed() && pillWindow.showInactive());
+  // Stay HIDDEN after load — the pill is PRELOADED in the background so it's already laid out
+  // (no loader / resize jolt) by the time it's surfaced. Only animate in when explicitly asked.
+  pillWindow.once('ready-to-show', () => { if (showAfter && pillWindow && !pillWindow.isDestroyed()) animatePill('in'); });
   pillWindow.on('closed', () => { pillWindow = null; });
 }
 
 // Bring the pill up (creating it on first use). Used when the user starts a timer in the
 // app — the pill then resolves the running task and shows it.
 function showPill() {
-  console.log('[pill] showPill()', { exists: !!pillWindow, url: `${APP_URL}/pill` });
-  if (!pillWindow || pillWindow.isDestroyed()) { createPill(); return; }
-  pillWindow.setBounds(pillBounds());
-  if (!pillWindow.isVisible()) pillWindow.showInactive();
+  if (!pillWindow || pillWindow.isDestroyed()) { createPill(true); return; }
+  if (!pillWindow.isVisible()) animatePill('in'); // keep its current (possibly dragged) position
 }
 
 function togglePill() {
-  // Hide (not destroy) so the pill reappears INSTANTLY on the next toggle — the renderer
-  // stays loaded with the focus task already on screen (no reload / loader flash). It's
-  // background-throttled while hidden, so its timers idle and it costs little.
+  // Hide/show (not destroy) so the pill reappears INSTANTLY — the renderer stays loaded with
+  // the focus task already on screen. Animate the surface in/out (slide + fade, 200ms expo).
   if (pillWindow && !pillWindow.isDestroyed()) {
-    if (pillWindow.isVisible()) pillWindow.hide();
-    else pillWindow.showInactive();
+    if (pillAnimTimer) return; // ignore re-presses mid-animation
+    if (pillWindow.isVisible()) animatePill('out');
+    else animatePill('in');
     return;
   }
-  createPill();
+  createPill(true);
 }
 
 // Reload the live URL — used to auto-recover from any blank/broken state so the
@@ -260,6 +300,12 @@ app.whenReady().then(async () => {
   session.defaultSession.setPermissionCheckHandler(() => true);
 
   createWindow();
+
+  // Preload the Focus pill window HIDDEN a moment after launch, so its web page is loaded and
+  // laid out before it's ever surfaced — Cmd+Shift+F then just slides it in instantly, with no
+  // loader box or resize jolt. (Delayed slightly so it doesn't compete with the main window's
+  // first paint.)
+  setTimeout(() => { if (!pillWindow || pillWindow.isDestroyed()) createPill(false); }, 2500);
 
   // Periodically flush DOM storage to disk so recent writes (auth token, prefs) survive
   // even a hard quit / crash, not just a graceful one.
