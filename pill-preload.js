@@ -17,5 +17,11 @@ contextBridge.exposeInMainWorld('gdMovePill', (dx, dy) => {
   ipcRenderer.send('gd-pill-move', { dx: Number(dx), dy: Number(dy) });
 });
 
+// The pill page pushes its user-tuned appear/dismiss timing (ms + easing kind: "io" | "out")
+// down to main, which owns the show/hide window animation.
+contextBridge.exposeInMainWorld('gdSetAnim', (ms, ease) => {
+  ipcRenderer.send('gd-pill-anim', { ms: Number(ms), ease: String(ease) });
+});
+
 // Diagnostic logging from the pill page → gd-session.log (same channel the main window uses).
 contextBridge.exposeInMainWorld('gdLog', (m) => ipcRenderer.send('gd-log', String(m)));

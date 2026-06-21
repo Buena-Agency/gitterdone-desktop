@@ -30,15 +30,20 @@ function pillBounds() {
   };
 }
 
-// pillAnimTimer drives the slide+fade show/hide tween.
+// pillAnimTimer drives the slide+fade show/hide tween. pillAnim holds the user-tuned timing
+// (pushed from the pill page via gdSetAnim): duration in ms and easing kind ('out' | 'io').
 let pillAnimTimer = null;
-// Slide-up + fade-in (direction 'in') or slide-down + fade-out (direction 'out') over 200ms,
-// expo ease-out. On 'out' the window is hidden when the tween finishes.
+let pillAnim = { ms: 200, ease: 'out' };
+// Slide-up + fade-in (direction 'in') or slide-down + fade-out (direction 'out'), using the
+// user-tuned duration + easing. On 'out' the window is hidden when the tween finishes.
 function animatePill(direction) {
   if (!pillWindow || pillWindow.isDestroyed()) return;
   if (pillAnimTimer) { clearInterval(pillAnimTimer); pillAnimTimer = null; }
-  const SLIDE = 18, DUR = 200;
+  const SLIDE = 18;
+  const DUR = Math.min(2000, Math.max(50, Number(pillAnim.ms) || 200));
   const expoOut = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+  const expoInOut = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2);
+  const easeFn = pillAnim.ease === 'io' ? expoInOut : expoOut;
   const b = pillWindow.getBounds();
   const restY = b.y;
   if (direction === 'in') {
@@ -50,7 +55,7 @@ function animatePill(direction) {
   pillAnimTimer = setInterval(() => {
     if (!pillWindow || pillWindow.isDestroyed()) { clearInterval(pillAnimTimer); pillAnimTimer = null; return; }
     const p = Math.min(1, (Date.now() - t0) / DUR);
-    const e = expoOut(p);
+    const e = easeFn(p);
     const cur = pillWindow.getBounds();
     if (direction === 'in') {
       pillWindow.setOpacity(e);
@@ -351,6 +356,12 @@ app.whenReady().then(async () => {
     if (!pillWindow || pillWindow.isDestroyed()) return;
     const b = pillWindow.getBounds();
     pillWindow.setBounds({ width: b.width, height: b.height, x: Math.round(b.x + (Number(dx) || 0)), y: Math.round(b.y + (Number(dy) || 0)) });
+  });
+
+  // The pill page pushes its user-tuned appear/dismiss timing here.
+  ipcMain.on('gd-pill-anim', (_e, { ms, ease } = {}) => {
+    if (Number.isFinite(ms) && ms > 0) pillAnim.ms = ms;
+    if (ease === 'io' || ease === 'out') pillAnim.ease = ease;
   });
 
   // Cmd/Ctrl+Shift+F toggles the focus pill.
