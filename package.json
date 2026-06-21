@@ -1,6 +1,6 @@
 {
   "name": "gitterdone-desktop",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Desktop shell for Gitterdone — a thin Electron wrapper around https://app.gitterdone.org that always loads the latest deployed web app.",
   "private": true,
   "main": "main.js",
@@ -29,6 +29,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "pill-preload.js",
       "splash.html",
       "package.json",
       "node_modules/**/*"
