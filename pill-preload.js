@@ -16,3 +16,6 @@ contextBridge.exposeInMainWorld('gdResizePill', (width, height) => {
 contextBridge.exposeInMainWorld('gdMovePill', (dx, dy) => {
   ipcRenderer.send('gd-pill-move', { dx: Number(dx), dy: Number(dy) });
 });
+
+// Diagnostic logging from the pill page → gd-session.log (same channel the main window uses).
+contextBridge.exposeInMainWorld('gdLog', (m) => ipcRenderer.send('gd-log', String(m)));
