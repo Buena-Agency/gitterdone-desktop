@@ -2,6 +2,10 @@ const { app, BrowserWindow, WebContentsView, shell, ipcMain, powerMonitor, sessi
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
+// Synchronously hand the web app this shell's version (for its corner build badge).
+// Registered once at module level so the preload's sendSync always has a single responder.
+ipcMain.on('gd-version', (e) => { e.returnValue = app.getVersion(); });
+
 // The live web app. Changing this one line re-points the whole desktop shell.
 // Temporarily pointed at the gitterdone-doug preview so changes show in the shell.
 const APP_URL = process.env.GITTERDONE_URL || 'https://gitterdone-doug.vercel.app';
