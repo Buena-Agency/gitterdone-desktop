@@ -11,3 +11,8 @@ contextBridge.exposeInMainWorld('gdOpenTask', (taskId) => {
 contextBridge.exposeInMainWorld('gdResizePill', (width, height) => {
   ipcRenderer.send('gd-pill-resize', { width: Number(width), height: Number(height) });
 });
+
+// The pill page sends pointer deltas to drag its own window to a new location.
+contextBridge.exposeInMainWorld('gdMovePill', (dx, dy) => {
+  ipcRenderer.send('gd-pill-move', { dx: Number(dx), dy: Number(dy) });
+});

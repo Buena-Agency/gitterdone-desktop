@@ -66,9 +66,14 @@ function showPill() {
 }
 
 function togglePill() {
-  // Destroy (not just hide) when dismissing, so a hidden pill holds no renderer process /
-  // memory. It's lightweight to recreate on demand (toggle or when a timer starts).
-  if (pillWindow && !pillWindow.isDestroyed()) { pillWindow.destroy(); pillWindow = null; return; }
+  // Hide (not destroy) so the pill reappears INSTANTLY on the next toggle — the renderer
+  // stays loaded with the focus task already on screen (no reload / loader flash). It's
+  // background-throttled while hidden, so its timers idle and it costs little.
+  if (pillWindow && !pillWindow.isDestroyed()) {
+    if (pillWindow.isVisible()) pillWindow.hide();
+    else pillWindow.showInactive();
+    return;
+  }
   createPill();
 }
 
@@ -279,10 +284,23 @@ app.whenReady().then(async () => {
   // it docked bottom-center: the bottom edge stays put, so it grows upward.
   ipcMain.on('gd-pill-resize', (_e, { width, height } = {}) => {
     if (!pillWindow || pillWindow.isDestroyed()) return;
-    const w = Math.max(220, Math.min(900, Math.round(width || PILL_W)));
+    const w = Math.max(160, Math.min(900, Math.round(width || PILL_W)));
     const h = Math.max(40, Math.min(600, Math.round(height || PILL_H)));
-    const wa = screen.getPrimaryDisplay().workArea;
-    pillWindow.setBounds({ width: w, height: h, x: Math.round(wa.x + (wa.width - w) / 2), y: wa.y + wa.height - h - 24 });
+    // Keep the window's CURRENT bottom-center fixed, so it grows upward in place — and a
+    // pill the user dragged elsewhere doesn't snap back to screen-center on every resize.
+    const b = pillWindow.getBounds();
+    const centerX = b.x + b.width / 2;
+    const bottomY = b.y + b.height;
+    pillWindow.setBounds({ width: w, height: h, x: Math.round(centerX - w / 2), y: Math.round(bottomY - h) });
+  });
+
+  // Custom drag — the pill page sends pointer deltas while the user drags an empty area of
+  // the pill (we don't use -webkit-app-region: drag, which would suppress the hover that
+  // reveals the controls). Move the window by the delta.
+  ipcMain.on('gd-pill-move', (_e, { dx, dy } = {}) => {
+    if (!pillWindow || pillWindow.isDestroyed()) return;
+    const b = pillWindow.getBounds();
+    pillWindow.setBounds({ width: b.width, height: b.height, x: Math.round(b.x + (Number(dx) || 0)), y: Math.round(b.y + (Number(dy) || 0)) });
   });
 
   // Cmd/Ctrl+Shift+F toggles the focus pill.
