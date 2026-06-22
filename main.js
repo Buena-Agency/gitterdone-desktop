@@ -2,10 +2,6 @@ const { app, BrowserWindow, WebContentsView, shell, ipcMain, powerMonitor, sessi
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
-// Synchronously hand the web app this shell's version (for its corner build badge).
-// Registered once at module level so the preload's sendSync always has a single responder.
-ipcMain.on('gd-version', (e) => { e.returnValue = app.getVersion(); });
-
 // The live web app. Changing this one line re-points the whole desktop shell.
 // Temporarily pointed at the gitterdone-doug preview so changes show in the shell.
 const APP_URL = process.env.GITTERDONE_URL || 'https://gitterdone-doug.vercel.app';
@@ -153,6 +149,9 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      // Hand the shell version to the preload as a launch arg (read from process.argv) instead
+      // of a synchronous IPC round-trip at startup — same result, nothing blocks the renderer.
+      additionalArguments: ['--gd-version=' + app.getVersion()],
       // Let Chromium throttle this renderer when the window is hidden (keep-warm) — it
       // stays in memory but its timers/rAF idle, so a hidden window stops burning CPU
       // and battery. Reopening re-renders instantly enough for a task app.

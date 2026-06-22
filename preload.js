@@ -15,9 +15,11 @@ try {
   // Lets the web app forward diagnostic lines to the desktop's stdout (renderer
   // console.log doesn't show there). Used to debug the session/login lifecycle.
   contextBridge.exposeInMainWorld('gdLog', (m) => ipcRenderer.send('gd-log', String(m)));
-  // The desktop app's own version (e.g. "1.0.16"), so the web app's corner build badge can
-  // show which SHELL you're running rather than just the web deploy SHA.
-  contextBridge.exposeInMainWorld('gdVersion', ipcRenderer.sendSync('gd-version'));
+  // The desktop app's own version (e.g. "1.0.19"), so the web app's corner build badge can
+  // show which SHELL you're running rather than just the web deploy SHA. Read from the launch
+  // arg main injects (no blocking sync IPC at startup).
+  const verArg = process.argv.find((a) => a.startsWith('--gd-version=')) || '';
+  contextBridge.exposeInMainWorld('gdVersion', verArg.slice('--gd-version='.length));
 } catch (_e) { /* ignore */ }
 
 // Detect when the web app has rendered its first REAL screen (the logged-in app or the
