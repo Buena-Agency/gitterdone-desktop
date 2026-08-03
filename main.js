@@ -3,8 +3,10 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 // The live web app. Changing this one line re-points the whole desktop shell.
-// Temporarily pointed at the gitterdone-doug preview so changes show in the shell.
-const APP_URL = process.env.GITTERDONE_URL || 'https://gitterdone-doug.vercel.app';
+// MUST be the canonical production domain — a preview/branch alias freezes the
+// shell on whatever that branch last deployed (and its /api/version 404s, so the
+// in-app stale-build watcher can't even tell it's behind).
+const APP_URL = process.env.GITTERDONE_URL || 'https://app.gitterdone.org';
 
 let mainWindow = null;
 let pillWindow = null;
