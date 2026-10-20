@@ -52,29 +52,12 @@
       100% { transform: translateY(-25px); }
     }
 
-    /* The real logo: three versions stacked, each shown for 300ms in turn, so the
-       three brand colors rotate across the layers (a 0.9s loop). */
+    /* The padded transparent logomark keeps the supplied artwork intact. */
     .logo {
-      position: relative;
+      display: block;
       width: 150px;
       height: 150px;
-    }
-    .logo svg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      animation: cycle 0.9s step-end infinite;
-    }
-    .logo .v1 { animation-delay: 0s; }
-    .logo .v2 { animation-delay: 0.3s; }
-    .logo .v3 { animation-delay: 0.6s; }
-
-    @keyframes cycle {
-      0%      { opacity: 1; }
-      33.34%  { opacity: 0; }
-      100%    { opacity: 0; }
+      object-fit: contain;
     }
 
     .word {
@@ -89,23 +72,7 @@
   <div class="card">
     <div class="logo-wrap enter">
       <div class="logo-hover">
-      <div class="logo">
-        <svg class="v1" width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M185.424 226.699L259.888 301.162L363.207 134.068L399.378 142.536L445.39 188.546L250.317 383.614L250.315 383.613L214.147 375.139L229.733 349.931L149.256 218.231L185.424 226.699Z" fill="#C65148"/>
-          <path d="M149.257 218.233L222.025 291L325.589 123.516L363.211 134.065L409.223 180.077L214.15 375.149L176.527 364.582L192.183 339.263L111.639 207.684L149.257 218.233Z" fill="#D47EC2"/>
-          <path d="M176.514 272.548L325.575 123.487L371.587 169.499L176.514 364.571L65.6104 253.667L111.622 207.656L176.514 272.548Z" fill="#FFDA35"/>
-        </svg>
-        <svg class="v2" width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M185.424 226.699L259.888 301.162L363.207 134.068L399.378 142.536L445.39 188.546L250.317 383.614L250.315 383.613L214.147 375.139L229.733 349.931L149.256 218.231L185.424 226.699Z" fill="#FFDA35"/>
-          <path d="M149.257 218.233L222.025 291L325.589 123.516L363.211 134.065L409.223 180.077L214.15 375.149L176.527 364.582L192.183 339.263L111.638 207.684L149.257 218.233Z" fill="#C65148"/>
-          <path d="M176.514 272.548L325.575 123.487L371.587 169.499L176.514 364.571L65.6104 253.667L111.622 207.656L176.514 272.548Z" fill="#D47EC2"/>
-        </svg>
-        <svg class="v3" width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M185.424 226.699L259.888 301.162L363.207 134.068L399.378 142.536L445.39 188.546L250.317 383.614L250.315 383.613L214.147 375.139L229.733 349.931L149.256 218.231L185.424 226.699Z" fill="#D47EC2"/>
-          <path d="M149.257 218.233L222.025 291L325.589 123.516L363.211 134.065L409.223 180.077L214.15 375.149L176.527 364.582L192.183 339.263L111.638 207.684L149.257 218.233Z" fill="#FFDA35"/>
-          <path d="M176.514 272.548L325.575 123.487L371.587 169.499L176.514 364.571L65.6104 253.667L111.622 207.656L176.514 272.548Z" fill="#C65148"/>
-        </svg>
-      </div>
+        <img class="logo" src="assets/gitterdone-logomark.png" width="150" height="150" alt="Gitterdone" draggable="false" />
       </div>
     </div>
     <div class="word enter">Gitterdone</div>
