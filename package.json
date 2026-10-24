@@ -1,82 +1,19 @@
 {
   "name": "gitterdone-desktop",
   "version": "1.0.21",
-  "description": "Desktop shell for Gitterdone â€” a thin Electron wrapper around https://app.gitterdone.org that always loads the latest deployed web app.",
+  "description": "Desktop shell for Gitterdone — a thin Tauri wrapper around https://app.gitterdone.org that always loads the latest deployed web app.",
   "private": true,
-  "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "dist": "electron-builder",
-    "dist:mac": "electron-builder --mac",
-    "dist:win": "electron-builder --win",
-    "pack": "electron-builder --dir"
+    "dev": "tauri dev",
+    "start": "tauri dev",
+    "build": "tauri build",
+    "build:universal": "tauri build --target universal-apple-darwin",
+    "icons": "tauri icon build/icon.png",
+    "tauri": "tauri"
   },
   "author": "Buena",
   "license": "UNLICENSED",
-  "dependencies": {
-    "electron-updater": "^6.3.9"
-  },
   "devDependencies": {
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.8"
-  },
-  "build": {
-    "appId": "pro.gitterdone.desktop",
-    "productName": "Gitterdone",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "pill-preload.js",
-      "splash.html",
-      "assets/gitterdone-logomark.png",
-      "package.json",
-      "node_modules/**/*"
-    ],
-    "publish": {
-      "provider": "github",
-      "owner": "Buena-Agency",
-      "repo": "gitterdone-desktop"
-    },
-    "mac": {
-      "icon": "build/icon.icns",
-      "category": "public.app-category.productivity",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "notarize": {
-        "teamId": "87P39MB3U6"
-      },
-      "target": [
-        { "target": "dmg", "arch": "universal" },
-        { "target": "zip", "arch": "universal" }
-      ]
-    },
-    "dmg": {
-      "artifactName": "Gitterdone.${ext}",
-      "title": "Gitterdone",
-      "window": {
-        "width": 540,
-        "height": 380
-      },
-      "iconSize": 110,
-      "contents": [
-        { "x": 150, "y": 175, "type": "file" },
-        { "x": 390, "y": 175, "type": "link", "path": "/Applications" }
-      ]
-    },
-    "win": {
-      "icon": "build/icon.ico",
-      "target": [
-        "nsis"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "artifactName": "Gitterdone.${ext}"
-    }
+    "@tauri-apps/cli": "^2"
   }
 }
