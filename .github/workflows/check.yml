@@ -1,0 +1,56 @@
+name: Check
+
+# Fast compile check on every push / PR (the full installer build only runs on a
+# version tag). This is the compile verification the author could not run locally
+# — the dev box's linker can't parse the macOS 27 SDK — so CI is the first real
+# build. It does not sign, notarize, or bundle; it just proves the Rust compiles.
+
+on:
+  push:
+    branches-ignore:
+      - 'gh-pages'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: cargo check
+        working-directory: src-tauri
+        run: cargo check --locked
+
+      - name: cargo clippy
+        working-directory: src-tauri
+        run: cargo clippy --locked -- -D warnings
+
+      - name: Rust unit tests (no webview or updater requests)
+        working-directory: src-tauri
+        run: cargo test --locked --lib

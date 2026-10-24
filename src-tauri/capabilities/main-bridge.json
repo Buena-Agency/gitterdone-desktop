@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-bridge",
+  "description": "Only the production main window may report app state, request a verified update, listen for shell events and use its title-bar controls.",
+  "windows": ["main"],
+  "local": false,
+  "remote": { "urls": ["https://app.gitterdone.org/*"] },
+  "permissions": [
+    "allow-main-bridge",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:window:allow-start-dragging",
+    "core:window:allow-toggle-maximize"
+  ]
+}

@@ -1,0 +1,37 @@
+[package]
+name = "gitterdone-desktop"
+version = "1.0.21"
+description = "Desktop shell for Gitterdone — a thin Tauri wrapper around https://app.gitterdone.org that always loads the latest deployed web app."
+authors = ["Buena"]
+license = "UNLICENSED"
+edition = "2021"
+rust-version = "1.77"
+
+# The library the binary and (on mobile) the generated entrypoints share.
+[lib]
+name = "gitterdone_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["macos-private-api"] }
+tauri-plugin-updater = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-global-shortcut = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# By default Tauri runs with a custom protocol; nothing extra needed here.
+default = []
+
+[profile.release]
+# Smaller, faster binaries — the whole point of leaving Electron. These knobs
+# routinely cut the macOS binary to a few MB (vs. Electron's ~150MB Chromium).
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

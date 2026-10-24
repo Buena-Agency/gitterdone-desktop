@@ -1,9 +1,13 @@
 # Gitterdone Desktop
 
-A minimal [Electron](https://www.electronjs.org/) shell around the live Gitterdone
-web app. It is a single window that loads **https://app.gitterdone.org**, so it
-always shows the latest deployed version — there is nothing to rebuild when the
-web app updates.
+A minimal [Tauri](https://tauri.app/) shell around the live Gitterdone web app. It
+is a single window that loads **https://app.gitterdone.org**, so it always shows the
+latest deployed version — there is nothing to rebuild when the web app updates.
+
+Tauri uses the operating system's own webview instead of bundling Chromium, so the
+app is a few MB (vs. Electron's ~150 MB) and far lighter on memory and startup. It
+was ported from Electron — see [`MIGRATION.md`](MIGRATION.md) for the mapping,
+the known gaps, and the required CI secrets.
 
 This repo is **completely separate** from the web app's repo and Vercel project.
 It contains no application code and no copy of the site — only the desktop wrapper.
@@ -23,29 +27,41 @@ landing page once and never update:
 
 ```bash
 npm install
-npm start
+npm start          # tauri dev
 ```
+
+Needs the [Rust toolchain](https://rustup.rs) installed.
 
 ## Build a double-clickable macOS app
 
 ```bash
-npm run dist
+npm run build            # current architecture
+npm run build:universal  # universal (Apple Silicon + Intel) .dmg/.app
 ```
 
-The packaged `.app`, `.dmg`, and `.zip` land in `dist/`.
+The packaged `.app` and `.dmg` land in `src-tauri/target/.../release/bundle/`.
 
-## Point it somewhere else
+## Application origin
 
-The URL lives in one place — `APP_URL` in [`main.js`](main.js). You can also
-override it at launch without editing code:
+The packaged bridge permits only `https://app.gitterdone.org`. A `GITTERDONE_URL`
+override pointing elsewhere is rejected before creating windows. Supporting a
+development origin requires an explicit, reviewed capability and native policy
+change; an environment variable cannot grant another site native permissions.
 
-```bash
-GITTERDONE_URL="https://staging.example.com" npm start
-```
+## Validation
+
+`npm test` runs synthetic bridge and configuration tests without opening a webview
+or contacting the live app. The Check workflow additionally runs locked Cargo
+check, Clippy and Rust unit tests on macOS and Windows. Both native jobs must pass
+before this migration is considered compile-verified. Installer signing, real
+update installation and platform interaction still require separate validation.
 
 ## How it works
 
-- `main.js` — creates the window and loads `APP_URL`. External links open in the
-  user's real browser; failed loads (offline / mid-deploy) retry automatically.
-- `preload.js` — intentionally empty; the web app gets no Node access (sandboxed).
-- `package.json` — `electron-builder` config for packaging.
+- `src-tauri/src/lib.rs` — creates the windows and loads the live URL. External
+  links open in the user's real browser; failed/blank loads self-heal.
+- `src-tauri/scripts/*-bridge.js` — injected `initialization_script`s that expose
+  the `window.gd*` bridge to the web app (the Tauri equivalent of a preload).
+- `ui/splash.html` — the branded loading splash.
+- `src-tauri/tauri.conf.json` + `src-tauri/capabilities/` — app + packaging config
+  and the permissions that let the remote page call the shell.

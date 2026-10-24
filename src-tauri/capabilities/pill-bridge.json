@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "pill-bridge",
+  "description": "Only the production Focus pill may control its bounded geometry and open a task in the main window.",
+  "windows": ["pill"],
+  "local": false,
+  "remote": { "urls": ["https://app.gitterdone.org/pill", "https://app.gitterdone.org/pill/"] },
+  "permissions": ["allow-pill-bridge"]
+}

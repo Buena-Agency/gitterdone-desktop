@@ -22,7 +22,7 @@ Google Calendar integration).
   suggestions, run the weekly reward, and report on team time/output.
 
 **Platforms:** Responsive web app, installable as a **PWA** (standalone display,
-maskable icons, dark theme `#1B1B1A`). A separate thin **Electron desktop shell**
+maskable icons, dark theme `#1B1B1A`). A separate thin **Tauri desktop shell**
 (`gitterdone-desktop`) wraps the live URL for a double-clickable macOS app.
 
 **Design language:** Dark-first, CSS-variable themed (`--bg-main`, `--text-second`,
@@ -228,7 +228,7 @@ declutter the menu"**, **"Visible tools"**.
 - **Backend:** Next.js Route Handlers under `/api/*` (see appendix), backed by
   **Supabase** (Postgres, Auth, Realtime, Storage for attachments).
 - **Integrations:** Google Calendar OAuth.
-- **Desktop:** Electron wrapper (`gitterdone-desktop`) loading the live URL; external
+- **Desktop:** Tauri wrapper (`gitterdone-desktop`) loading the live URL; external
   links open in the system browser; auto-retry on failed load.
 
 ---
