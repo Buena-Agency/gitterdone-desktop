@@ -11,6 +11,9 @@ on:
       - 'gh-pages'
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   check:
     strategy:
@@ -23,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install Rust
@@ -38,6 +41,8 @@ jobs:
 
       - run: npm ci
 
+      - run: npm test
+
       - name: cargo check
         working-directory: src-tauri
         run: cargo check --locked
@@ -45,3 +50,7 @@ jobs:
       - name: cargo clippy
         working-directory: src-tauri
         run: cargo clippy --locked -- -D warnings
+
+      - name: Rust unit tests (no webview or updater requests)
+        working-directory: src-tauri
+        run: cargo test --locked --lib

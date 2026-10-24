@@ -35,17 +35,19 @@ The `window.gd*` bridge the web app depends on is **unchanged** in shape:
 `gdDesktop`, `gdFocusStarted`, `gdAppReady`, `gdLog`, `gdVersion`, `gdOpenTask`,
 `gdResizePill`, `gdMovePill`, `gdSetAnim`. No web-app change is required.
 
-## Faithfully ported
+## Intended behavior
 
-- Remote-URL main window; `GITTERDONE_URL` env override still works.
+- Remote-URL main window restricted to the packaged production origin. Arbitrary
+  `GITTERDONE_URL` overrides are rejected rather than granting native access.
 - Branded splash with the 2s minimum-display floor and a 25s hard cap.
 - Preloaded, hidden Focus pill; `Cmd/Ctrl+Shift+F` toggle; slide show/hide with the
   user-tuned duration + easing; resize-grows-upward; custom drag; jump-to-task.
 - External/off-origin links open in the system browser.
 - macOS keep-warm (close hides; real quit exits) and Dock-reopen.
 - macOS hidden-inset title bar with an injected drag strip past the traffic lights.
-- Auto-update from GitHub Releases on launch + every 6h, surfaced as the same in-app
-  "Quit & Relaunch" toast.
+- Update availability checks from GitHub Releases on launch + every 6h. An explicit
+  "Update & Relaunch" click starts downloading and installing. Failure keeps the
+  current process running, reports a generic error and permits an explicit retry.
 - `gd-session.log` diagnostic logging.
 - Self-heal reload if the app never finishes loading.
 - Sleep/wake reload (replaces Electron's `powerMonitor` 'resume' with a wall-clock
@@ -73,9 +75,24 @@ The `window.gd*` bridge the web app depends on is **unchanged** in shape:
    `render-process-gone` / `unresponsive`. Tauri exposes `on_page_load`; the heal
    timer + sleep/wake watchdog cover the common blank-window cases, but transient
    mid-session load failures retry less aggressively.
-6. **`_blank` / `window.open` links.** Off-origin top-level navigations are sent to
-   the browser via `on_navigation`; pure `window.open('_blank')` popups should be
-   spot-checked.
+6. **Navigation/platform testing.** Main and pill navigation use parsed origin
+   checks. Popups are denied as native windows and allowed HTTP(S)/mailto links
+   open in the system browser. Authentication popups, media permissions, sleep/wake,
+   rapid pill toggles and signed updates still need native platform smoke tests.
+
+## Review fixes and validation boundary
+
+The original PR's macOS and Windows Check jobs stopped before compiling the app:
+the configured macOS private API flag was missing its Cargo feature. The review
+adds that feature, platform-specific bundle targets, macOS-only event guards and
+longer-lived state bindings for mutex guards. Native compilation remains pending
+until both updated Check jobs pass; local JavaScript tests do not substitute for it.
+
+Custom IPC commands are declared in an app manifest and split into main/pill
+capabilities. Every native command also verifies the injected calling window and
+its URL. The splash receives no capabilities, and remote pages receive no generic
+updater, window-destroy or event-emit permission. Update packages retain Tauri's
+signature verification; `latest.json` itself is a manifest, not a signed document.
 
 ## One-time user migration (important)
 
@@ -110,5 +127,5 @@ npm install
 npm start                 # tauri dev — loads the live app
 npm run build             # current arch
 npm run build:universal   # universal macOS .dmg/.app
-GITTERDONE_URL="https://staging.example.com" npm start   # point elsewhere
+npm test                  # synthetic only; does not launch the app
 ```

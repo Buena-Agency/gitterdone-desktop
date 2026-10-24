@@ -11,12 +11,13 @@
     "macOSPrivateApi": true,
     "windows": [],
     "security": {
+      "capabilities": ["main-bridge", "pill-bridge"],
       "csp": null
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": ["app"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

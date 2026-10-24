@@ -1,7 +1,7 @@
 name: Build desktop installers
 
 # Build the macOS (.dmg, universal) and Windows (.exe) installers with Tauri on
-# real runners, sign/notarize them, and generate the signed auto-updater manifest.
+# real runners, sign/notarize them, and generate a manifest for signed updates.
 #
 # - Push a version tag (e.g. v1.0.22) to build AND publish a GitHub Release with
 #   the installers + updater artifacts attached.
@@ -35,7 +35,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install Rust
@@ -53,6 +53,7 @@ jobs:
       - name: Build, sign, and (on a tag) publish
         uses: tauri-apps/tauri-action@v0
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           # --- Auto-updater signing (Tauri minisign key) ---
           # Private key generated with `npm run tauri signer generate`; the matching
           # public key is baked into tauri.conf.json (plugins.updater.pubkey).
@@ -68,7 +69,7 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} -- --locked
           # On a version tag, create/publish the release and attach the bundles +
           # updater manifest (latest.json). tauri-action notarizes and staples the
           # .app and .dmg itself, so no separate notarytool step is needed.
@@ -79,6 +80,17 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
 
+      - name: Keep manual build artifacts without publishing a release
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ runner.os }}
+          path: |
+            src-tauri/target/**/release/bundle/dmg/*.dmg
+            src-tauri/target/**/release/bundle/nsis/*-setup.exe
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz*
+          if-no-files-found: error
+
       # Keep the permanent "always latest" download links working. tauri-action
       # uploads versioned filenames (e.g. Gitterdone_1.0.22_universal.dmg); add
       # stable-named copies so the landing-page links never need updating:
@@ -88,19 +100,21 @@ jobs:
         if: runner.os == 'macOS' && startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -e
           DMG=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg | head -1)
           cp "$DMG" "Gitterdone.dmg"
-          gh release upload "${{ github.ref_name }}" "Gitterdone.dmg" --clobber
+          gh release upload "$RELEASE_TAG" "Gitterdone.dmg" --clobber
 
       - name: Attach stable-named installer aliases (Windows)
         if: runner.os == 'Windows' && startsWith(github.ref, 'refs/tags/')
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -e
           EXE=$(ls src-tauri/target/release/bundle/nsis/*-setup.exe | head -1)
           cp "$EXE" "Gitterdone.exe"
-          gh release upload "${{ github.ref_name }}" "Gitterdone.exe" --clobber
+          gh release upload "$RELEASE_TAG" "Gitterdone.exe" --clobber

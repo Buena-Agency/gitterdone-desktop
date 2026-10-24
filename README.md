@@ -41,15 +41,20 @@ npm run build:universal  # universal (Apple Silicon + Intel) .dmg/.app
 
 The packaged `.app` and `.dmg` land in `src-tauri/target/.../release/bundle/`.
 
-## Point it somewhere else
+## Application origin
 
-The URL lives in one place — `app_url()` in
-[`src-tauri/src/lib.rs`](src-tauri/src/lib.rs). You can also override it at launch
-without editing code:
+The packaged bridge permits only `https://app.gitterdone.org`. A `GITTERDONE_URL`
+override pointing elsewhere is rejected before creating windows. Supporting a
+development origin requires an explicit, reviewed capability and native policy
+change; an environment variable cannot grant another site native permissions.
 
-```bash
-GITTERDONE_URL="https://staging.example.com" npm start
-```
+## Validation
+
+`npm test` runs synthetic bridge and configuration tests without opening a webview
+or contacting the live app. The Check workflow additionally runs locked Cargo
+check, Clippy and Rust unit tests on macOS and Windows. Both native jobs must pass
+before this migration is considered compile-verified. Installer signing, real
+update installation and platform interaction still require separate validation.
 
 ## How it works
 

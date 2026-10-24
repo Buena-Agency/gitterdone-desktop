@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-main-bridge"
+description = "Main-window application bridge; native origin and caller-label guards also apply."
+commands.allow = ["gd_focus_started", "gd_app_ready", "gd_log", "gd_quit_and_install"]
+
+[[permission]]
+identifier = "allow-pill-bridge"
+description = "Focus-pill application bridge; native origin, path and caller-label guards also apply."
+commands.allow = ["gd_open_task", "gd_resize_pill", "gd_move_pill", "gd_set_anim", "gd_log"]

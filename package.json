@@ -4,6 +4,7 @@
   "description": "Desktop shell for Gitterdone — a thin Tauri wrapper around https://app.gitterdone.org that always loads the latest deployed web app.",
   "private": true,
   "scripts": {
+    "test": "node --test tests/*.test.mjs",
     "dev": "tauri dev",
     "start": "tauri dev",
     "build": "tauri build",

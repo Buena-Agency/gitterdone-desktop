@@ -10,8 +10,13 @@
   var T = window.__TAURI__;
   // If the Tauri API isn't present we're in a plain browser tab — every call
   // below must be a safe no-op, exactly like the Electron preload in a browser.
-  var invoke = T && T.core && T.core.invoke ? T.core.invoke : function () {};
-  var listen = T && T.event && T.event.listen ? T.event.listen : function () {};
+  var invoke = T && T.core && T.core.invoke ? T.core.invoke : function () {
+    return Promise.reject(new Error("Desktop bridge unavailable"));
+  };
+  var listen = T && T.event && T.event.listen ? T.event.listen : function () { return Promise.resolve(); };
+  function send(command, args) {
+    try { Promise.resolve(invoke(command, args)).catch(function () {}); } catch (_e) {}
+  }
 
   var GD_VERSION = typeof window.__GD_SHELL_VERSION__ === "string" ? window.__GD_SHELL_VERSION__ : "";
 
@@ -20,12 +25,12 @@
     window.gdDesktop = true;
     // The user started a timer → surface the Focus pill.
     window.gdFocusStarted = function (taskId) {
-      invoke("gd_focus_started", { taskId: typeof taskId === "string" ? taskId : "" });
+      send("gd_focus_started", { taskId: typeof taskId === "string" ? taskId : "" });
     };
     // The app painted its first real screen → drop the branded splash.
-    window.gdAppReady = function () { invoke("gd_app_ready"); };
+    window.gdAppReady = function () { send("gd_app_ready"); };
     // Forward a diagnostic line to the shell's stdout / gd-session.log.
-    window.gdLog = function (m) { invoke("gd_log", { msg: String(m) }); };
+    window.gdLog = function (m) { send("gd_log", { msg: String(m) }); };
     // The shell's own version, so the web app's build badge can show it.
     window.gdVersion = GD_VERSION;
   } catch (_e) { /* ignore */ }
@@ -40,8 +45,8 @@
       if (done) return;
       done = true;
       try { observer.disconnect(); } catch (_e) {}
-      invoke("gd_app_ready");
-      invoke("gd_log", { msg: "[gd-ready] " + why });
+      send("gd_app_ready");
+      send("gd_log", { msg: "[gd-ready] " + why });
     }
     function check() {
       if (done || !document.body) return;
@@ -62,8 +67,8 @@
   })();
 
   // ---- "Update ready" toast -------------------------------------------------
-  // When the shell finishes downloading an update it emits `gd-update-ready`.
-  // Build a small bottom-left toast with a "Quit & Relaunch" button (the page is
+  // The shell advertises an available update; downloading starts only on click.
+  // Build a small bottom-left toast with an explicit update button (the page is
   // a remote site we don't own, so the toast is injected here).
   var UPDATE_TOAST_ID = "__gd_update_toast";
   function showUpdateToast() {
@@ -81,20 +86,34 @@
       "transition:opacity .2s ease, transform .2s ease",
     ].join(";");
     var msg = document.createElement("span");
-    msg.textContent = "A new version is ready. Quit and relaunch to update.";
+    msg.textContent = "A new desktop version is available. Save your work before updating.";
     msg.style.cssText = "flex:1";
     var btn = document.createElement("button");
-    btn.textContent = "Quit & Relaunch";
+    btn.textContent = "Update & Relaunch";
     btn.style.cssText = [
       "flex:none", "cursor:pointer", "border:none", "border-radius:7px",
       "padding:7px 11px", "background:#FBBF24", "color:#1B1B1A",
       "font-weight:600", "font-size:12px", "white-space:nowrap",
     ].join(";");
+    var installing = false;
     btn.addEventListener("click", function () {
-      btn.textContent = "Restarting…";
+      if (installing) return;
+      installing = true;
+      btn.textContent = "Updating…";
       btn.disabled = true;
-      toast.remove();
-      invoke("gd_quit_and_install");
+      dismiss.disabled = true;
+      Promise.resolve().then(function () {
+        return invoke("gd_quit_and_install");
+      }).then(function () {
+        btn.textContent = "Restarting…";
+      }).catch(function () {
+        // Do not reflect native/provider errors into the remote page.
+        msg.textContent = "The update could not be installed. Your current app is still running.";
+        btn.textContent = "Try update again";
+        btn.disabled = false;
+        dismiss.disabled = false;
+        installing = false;
+      });
     });
     var dismiss = document.createElement("button");
     dismiss.textContent = "✕";
@@ -103,7 +122,7 @@
       "flex:none", "cursor:pointer", "border:none", "background:transparent",
       "color:rgba(245,245,244,0.55)", "font-size:13px", "padding:2px 4px", "line-height:1",
     ].join(";");
-    dismiss.addEventListener("click", function () { toast.remove(); });
+    dismiss.addEventListener("click", function () { if (!installing) toast.remove(); });
     toast.append(msg, btn, dismiss);
     document.body.appendChild(toast);
     requestAnimationFrame(function () {
@@ -112,10 +131,10 @@
     });
   }
   try {
-    listen("gd-update-ready", function () {
+    Promise.resolve(listen("gd-update-ready", function () {
       if (document.body) showUpdateToast();
       else window.addEventListener("DOMContentLoaded", showUpdateToast);
-    });
+    })).catch(function () {});
   } catch (_e) { /* ignore */ }
 
   // ---- macOS drag strip -----------------------------------------------------
@@ -139,7 +158,7 @@
         if (e.button !== 0) return;
         try {
           var w = window.__TAURI__.window.getCurrentWindow();
-          if (e.detail === 2) w.toggleMaximize(); else w.startDragging();
+          Promise.resolve(e.detail === 2 ? w.toggleMaximize() : w.startDragging()).catch(function () {});
         } catch (_e) {}
       });
       document.body.appendChild(bar);
