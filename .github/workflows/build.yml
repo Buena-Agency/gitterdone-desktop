@@ -23,11 +23,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Explicitly request installer bundles for the release: the committed
+          # tauri.conf.json keeps targets app-only (fast local/check builds), so
+          # the release asks for the .dmg / .exe here. Updater artifacts
+          # (latest.json) still come from createUpdaterArtifacts in the config.
           - os: macos-latest
-            args: '--target universal-apple-darwin'
+            args: '--target universal-apple-darwin --bundles app,dmg'
             rust-targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
           - os: windows-latest
-            args: ''
+            args: '--bundles nsis'
             rust-targets: ''
     runs-on: ${{ matrix.os }}
     steps:
@@ -50,6 +54,35 @@ jobs:
 
       - run: npm ci
 
+      # Read the Developer ID signing identity straight out of the certificate
+      # that's already saved as a secret, so no separate APPLE_SIGNING_IDENTITY
+      # secret has to be maintained (how the old electron-builder auto-discovery
+      # worked). Imports the cert into a throwaway keychain purely to read the
+      # identity name, then deletes it — tauri-action does its own import to sign.
+      - name: Derive the Apple signing identity from the saved certificate
+        if: runner.os == 'macOS'
+        id: signid
+        env:
+          CERT_B64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          CERT_PW: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -eu
+          CERT="$RUNNER_TEMP/gd-cert.p12"
+          KEYCHAIN="$RUNNER_TEMP/gd-signing.keychain-db"
+          KC_PW="$(openssl rand -base64 24)"
+          printf '%s' "$CERT_B64" | openssl base64 -d -A > "$CERT"
+          security create-keychain -p "$KC_PW" "$KEYCHAIN"
+          security unlock-keychain -p "$KC_PW" "$KEYCHAIN"
+          security import "$CERT" -k "$KEYCHAIN" -P "$CERT_PW" -T /usr/bin/codesign >/dev/null
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN" | sed -n 's/.*"\(Developer ID Application:[^"]*\)".*/\1/p' | sed -n '1p')"
+          security delete-keychain "$KEYCHAIN"
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::No 'Developer ID Application' identity found in the MACOS_CERTIFICATE_P12_BASE64 secret."
+            exit 1
+          fi
+          echo "Using signing identity: $IDENTITY"
+          echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
+
       - name: Build, sign, and (on a tag) publish
         uses: tauri-apps/tauri-action@v0
         env:
@@ -61,10 +94,11 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # --- macOS code signing + notarization (Developer ID) ---
           # Reuses the same Apple credentials the Electron build used; APPLE_CERTIFICATE*
-          # are the old MACOS_CERTIFICATE_* secrets, plus a new APPLE_SIGNING_IDENTITY.
+          # are the old MACOS_CERTIFICATE_* secrets. The signing identity is read out
+          # of that certificate in the step above — no separate secret to maintain.
           APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_SIGNING_IDENTITY: ${{ steps.signid.outputs.identity }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
