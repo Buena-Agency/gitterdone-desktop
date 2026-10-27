@@ -1,6 +1,6 @@
 [package]
 name = "gitterdone-desktop"
-version = "1.0.21"
+version = "1.0.22"
 description = "Desktop shell for Gitterdone — a thin Tauri wrapper around https://app.gitterdone.org that always loads the latest deployed web app."
 authors = ["Buena"]
 license = "UNLICENSED"
