@@ -112,13 +112,16 @@ Already present from the Electron build:
 `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` (team `87P39MB3U6`).
 
 New secrets to add (Settings → Secrets → Actions):
-- `APPLE_SIGNING_IDENTITY` — e.g. `Developer ID Application: Buena … (87P39MB3U6)`.
 - `TAURI_SIGNING_PRIVATE_KEY` — the minisign private key (generated locally; **never
   commit it**).
 - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — its password (empty string if none).
 
 The matching **public** key is already in `src-tauri/tauri.conf.json`
 (`plugins.updater.pubkey`). If you regenerate the keypair, update that value too.
+
+The release workflow derives `APPLE_SIGNING_IDENTITY` from the existing Developer
+ID certificate; a separate secret is no longer needed. Discovery removes both its
+temporary certificate and keychain even when import or identity lookup fails.
 
 ## Run / build locally
 
